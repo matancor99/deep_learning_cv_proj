@@ -1,1 +1,3 @@
 *.record
+*.pyc
+Thumbs.db
