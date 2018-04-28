@@ -2,3 +2,5 @@
 *.pyc
 Thumbs.db
 data
+images
+savedir_images
