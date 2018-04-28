@@ -20,8 +20,49 @@ def run(myAnnFileName, buses):
 
 	strToWrite = ''
 
-	for k, line_ in enumerate(writtenAnnsLines['Ground_Truth']):
 
+	# Grab path to current working directory
+	CWD_PATH = os.getcwd()
+
+	# Path to frozen detection graph .pb file, which contains the model that is used
+	# for object detection.
+	PATH_TO_CKPT = os.path.join(CWD_PATH, MODEL_NAME, 'frozen_inference_graph.pb')
+
+
+
+
+	# Number of classes the object detector can identify
+	NUM_CLASSES = 6
+
+	# Load the Tensorflow model into memory.
+	detection_graph = tf.Graph()
+	with detection_graph.as_default():
+		od_graph_def = tf.GraphDef()
+		with tf.gfile.GFile(PATH_TO_CKPT, 'rb') as fid:
+			serialized_graph = fid.read()
+			od_graph_def.ParseFromString(serialized_graph)
+			tf.import_graph_def(od_graph_def, name='')
+
+		sess = tf.Session(graph=detection_graph)
+
+	# Define input and output tensors (i.e. data) for the object detection classifier
+
+	# Input tensor is the image
+	image_tensor = detection_graph.get_tensor_by_name('image_tensor:0')
+
+	# Output tensors are the detection boxes, scores, and classes
+	# Each box represents a part of the image where a particular object was detected
+	detection_boxes = detection_graph.get_tensor_by_name('detection_boxes:0')
+
+	# Each score represents level of confidence for each of the objects.
+	# The score is shown on the result image, together with the class label.
+	detection_scores = detection_graph.get_tensor_by_name('detection_scores:0')
+	detection_classes = detection_graph.get_tensor_by_name('detection_classes:0')
+
+	# Number of objects detected
+	num_detections = detection_graph.get_tensor_by_name('num_detections:0')
+        
+	for k, line_ in enumerate(writtenAnnsLines['Ground_Truth']):
 		line = line_.replace(' ','')
 		imName = line.split(':')[0]
 
@@ -29,47 +70,8 @@ def run(myAnnFileName, buses):
 
 		IMAGE_NAME = imName
 
-		# Grab path to current working directory
-		CWD_PATH = os.getcwd()
-
-		# Path to frozen detection graph .pb file, which contains the model that is used
-		# for object detection.
-		PATH_TO_CKPT = os.path.join(CWD_PATH, MODEL_NAME, 'frozen_inference_graph.pb')
-
-
 		# Path to image
 		PATH_TO_IMAGE = os.path.join(CWD_PATH, TEST_IMAGES_DIR, IMAGE_NAME)
-
-		# Number of classes the object detector can identify
-		NUM_CLASSES = 6
-
-		# Load the Tensorflow model into memory.
-		detection_graph = tf.Graph()
-		with detection_graph.as_default():
-			od_graph_def = tf.GraphDef()
-			with tf.gfile.GFile(PATH_TO_CKPT, 'rb') as fid:
-				serialized_graph = fid.read()
-				od_graph_def.ParseFromString(serialized_graph)
-				tf.import_graph_def(od_graph_def, name='')
-
-			sess = tf.Session(graph=detection_graph)
-
-		# Define input and output tensors (i.e. data) for the object detection classifier
-
-		# Input tensor is the image
-		image_tensor = detection_graph.get_tensor_by_name('image_tensor:0')
-
-		# Output tensors are the detection boxes, scores, and classes
-		# Each box represents a part of the image where a particular object was detected
-		detection_boxes = detection_graph.get_tensor_by_name('detection_boxes:0')
-
-		# Each score represents level of confidence for each of the objects.
-		# The score is shown on the result image, together with the class label.
-		detection_scores = detection_graph.get_tensor_by_name('detection_scores:0')
-		detection_classes = detection_graph.get_tensor_by_name('detection_classes:0')
-
-		# Number of objects detected
-		num_detections = detection_graph.get_tensor_by_name('num_detections:0')
 
 		# Load image using OpenCV and
 		# expand image dimensions to have shape: [1, None, None, 3]
@@ -120,6 +122,6 @@ def run(myAnnFileName, buses):
 		ItstrToWrite = ItstrToWrite.replace(']]',']')
 		strToWrite += ItstrToWrite
 		print(ItstrToWrite)
-		
+
 	print(strToWrite)
 	annFileEstimations.write(strToWrite)
